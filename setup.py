@@ -5,7 +5,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="neomate",
+<<<<<<< HEAD
     version="0.1.0",  
+=======
+    version="0.1.1",  
+>>>>>>> 31ed7c0 (changed architecture)
     author="MrRac",
     author_email="trew5804@gmail.com",
     description="Lightweight Neo4j ORM with type validation and relationship management",
@@ -46,15 +50,11 @@ setup(
         "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Framework :: Neo4j",
-        "Typing :: Typed",
+
     ],
     
     python_requires=">=3.7",
  
-    package_data={
-        'neomate': ['py.typed', '*.pyi'],
-    },
 
     project_urls={
         "Bug Tracker": "https://github.com/cashelastest/neomate/issues",
@@ -62,5 +62,10 @@ setup(
         "Source Code": "https://github.com/cashelastest/neomate",
     },
     
+<<<<<<< HEAD
     keywords="neo4j, orm, database, graph database, type validation, relationship management",
 )
+=======
+    keywords=" orm, database, graph database, type validation, relationship management",
+)
+>>>>>>> 31ed7c0 (changed architecture)
