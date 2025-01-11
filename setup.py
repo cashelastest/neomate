@@ -6,8 +6,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="neomate",
     version="0.1.0",  
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="MrRac",
+    author_email="trew5804@gmail.com",
     description="Lightweight Neo4j ORM with type validation and relationship management",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -37,7 +37,7 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Database :: Database Engines/Servers",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Database :: Front-Ends",
+        "Topic :: Database",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
@@ -57,9 +57,9 @@ setup(
     },
 
     project_urls={
-        "Bug Tracker": "https://github.com/yourusername/neomate/issues",
-        "Documentation": "https://github.com/yourusername/neomate#readme",
-        "Source Code": "https://github.com/yourusername/neomate",
+        "Bug Tracker": "https://github.com/cashelastest/neomate/issues",
+        "Documentation": "https://github.com/cashelastest/neomate#readme",
+        "Source Code": "https://github.com/cashelastest/neomate",
     },
     
     keywords="neo4j, orm, database, graph database, type validation, relationship management",
