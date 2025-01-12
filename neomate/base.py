@@ -1,6 +1,6 @@
 from contextlib import contextmanager
-from logger.logger import Logger
-from utils.utils import query_maker
+from neomate.logger.logger import Logger
+from neomate.utils.utils import query_maker
 
 
     

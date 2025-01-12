@@ -2,3 +2,4 @@ neo4j-driver
 colorlog
 pytest
 pytest-mock
+click

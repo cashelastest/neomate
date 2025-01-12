@@ -1,5 +1,5 @@
 from unittest.mock import Mock,MagicMock
-from neomate.NeoMate import NeoMate
+from neomate.neomate.NeoMate import NeoMate
 
 
 class TestNeoRacoon:

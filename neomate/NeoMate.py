@@ -1,5 +1,5 @@
-from neomate.base import NeoBase
-from neomate.orm import Types
+from neomate.neomate.base import NeoBase
+from neomate.neomate.orm import Types
 
 class Base:
     id  = 0
