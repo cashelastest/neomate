@@ -3,6 +3,9 @@ from neomate.neomate.orm import Types
 
 class Base:
     id  = 0
+    
+    def add_node_type(self, node_name):
+        return f"""CREATE (a:{node_name})"""
 
     def to_dict(self)->list[dict]:
         """Generates a list of dictionaries based on object attributes and its nested objects.

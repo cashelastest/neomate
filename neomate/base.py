@@ -139,13 +139,14 @@ class NeoBase:
             tx.run(query)
             
 
-    def delete_all_nodes(self, delete_relationships:bool):
+    def delete_all_nodes(self, delete_relationships:bool,type = None):
         """
         deletes all nodes
         Args:
             delete_relationships (bool): param, if True -> deletes relationships
         """
-        query = f"""MATCH (a) {'DETACH DELETE' if delete_relationships else 'DELETE'} a"""
+        
+        query = f"""MATCH (a{f": {type}" if type else ""}) {'DETACH DELETE' if delete_relationships else 'DELETE'} a"""
         with self.trans() as tx:
             tx.run(query)
 
