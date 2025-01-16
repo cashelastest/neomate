@@ -86,4 +86,4 @@ def testing():
     manager = SessionManager.get_instance().manager
     # manager.init_schemas()
     # manager.get_schema()
-    manager.validate_schema()
+    manager.makemigrations()

@@ -1,4 +1,7 @@
 from neomate.neomate.orm import Types
+from neomate.logger.logger import Logger
+
+logger = Logger().create_logger()
 class BaseMigration:
     version = None
     description = None
@@ -32,21 +35,63 @@ class MigrationManager:
 
             return result
     def validate_schema(self):
-        schema = self.neo_mate.base.__subclasses__()[0]
-        # print("schema", vars(schema))
+        schemas = self.neo_mate.base.__subclasses__()
+        validated_results = []
         
-        new_schema = {k:v for k,v in vars(schema).items() if "__" not in k or k == "__nodename__"}
-        old_schemas = self.get_schema()
-        s = Types.from_dict(old_schemas[0])
-        print(s)
-        print(new_schema)
-        validated_schema = {k:v for k,v in new_schema.items() if k not in s.keys() or v != s[k]}
-        print(validated_schema)
-        if validated_schema:
-            print(new_schema)
-            print(s)
-            print("end")
+        for schema in schemas:
+            new_schema = {
+                k: v for k, v in vars(schema).items() 
+                if "__" not in k or k == "__nodename__"
+            }
+            
+            old_schemas = self.get_schema()
+            
+            for old_schema in old_schemas:
+                s = Types.from_dict(old_schema)
+                validate_schema = {'creates':[],'changes':[],'deletes':[]}
+                nodename = new_schema.get("__nodename__", s.get("___nodename__"))
+                for key, value in new_schema.items():
+                    if key == "__nodename__" and value != s.get('__nodename__'):
+                        query = Types.set_nodename(s.get("__nodename__"), value)
+                        
+                        for q in query:
+                            self.query_runner(query=q)
+                        print(query)
+                        nodename = value
+                        validate_schema['__nodename__'] = nodename
+                        logger.info(f"nodename changed from {s[key]} to {value}")
+                        continue
+                        
+                    if key not in s.keys():
+                        logger.info(f'Create new attribute {key}')
+                        
+                        
+                        validate_schema["creates"].append((value, nodename, key))
+                        continue
+                        
+                    if value != s[key]:
+                        result = Types.compare_dicts(s[key].__dict__, value.__dict__)
+                        for prop, val in result[1].items():
+                            validate_schema['changes'].append((nodename,key,{prop:val}))
+                            
+                        logger.info(f"result is {result} for {key}")
+                
+
+                for key in s.keys():
+                    if key not in new_schema.keys():
+                        validate_schema['deletes'].append((nodename, key))
+                        logger.info(f"deleting field {key}")
+                
+                if validate_schema:
+                    validated_results.append({
+                        'schema_name': schema.__name__,
+                        'changes': validate_schema
+                    })
+                    print(f"Changes for {schema.__name__}:", validate_schema)
+                    print("end")
         
+        return validate_schema
+            
     def get_schema(self):
         with self.neo_mate.trans() as tx:
             schema = tx.run("""
@@ -95,7 +140,7 @@ class MigrationManager:
             # with self.neo_mate.trans() as tx:
             #     tx.run(cypher_query)
             # print(cypher_query)
-        
+
     def record_migrations(self, version):
         with self.neo_mate.trans() as tx:
             result = tx.run("""
@@ -108,3 +153,27 @@ class MigrationManager:
             result = result.get('migrations', [])
             print(result)
             return result
+    def query_runner(self,query):
+        with self.neo_mate.trans() as tx:
+            tx.run(query)
+    def makemigrations(self):
+
+        validated_schema = self.validate_schema()
+        query =''
+        for node in validated_schema['creates']:
+            query = Types.create_node_attr(*node)
+            self.query_runner(query)
+
+            print("creating property \n", query)
+        for node in validated_schema['deletes']:
+            query = Types.delete_node_attr(*node)
+            self.query_runner(query)
+            print("deletes nodes \n", query)
+        for node in validated_schema['changes']:
+            for key,value in node[2].items():
+                
+                query = Types.add_prop_to_node_attr(node[0],node[1], (key,value))
+                self.query_runner(query)
+
+            
+            print("creating attrs to ", query)
