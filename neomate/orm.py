@@ -29,6 +29,12 @@ class Types:
             return getattr(__import__('__main__'), self.type)
         return self.type
     def to_dict(self,keys):
+        
+        def format_data(value):
+            if isinstance(value,int):
+                return value
+            else:
+                return f'"{value}"'
         res = {}
         changes = {
             "true":True,
@@ -38,7 +44,7 @@ class Types:
         for key, value in vars(self).items():
 
             if key == "type":
-                res[key] = value.__name__
+                res[key] = self.actual_type().__name__
             elif value in changes.keys():
                 res[key] = changes[value]
             # elif key == "name":
@@ -49,7 +55,7 @@ class Types:
                 res[key] = value
                 
         res["field_name"] = keys
-        return ", ".join(f"""{k}:"{v}" """ for k,v in res.items())
+        return ", ".join(f"""{k}:{format_data(v)} """ for k,v in res.items())
     @classmethod
     def from_dict(self, schema):
         nodename = schema.get("schema").get("nodename")
@@ -69,12 +75,12 @@ class Types:
 
             for key,value in prop.items():
                 if str(value).lower() in changes.keys():
-                    print(1)
+
                     res[key] = changes.get(value)
                 elif key not in ["field_name", "type"]:
                     res[key]= value
                     
-            new_properties[prop.get("field_name")] =  Types(__builtins__[prop.get('type')],**res)
+            new_properties[prop.get("field_name")] =  Types(__builtins__.get(prop.get('type'), None) or prop.get('type'),**res)
 
             
         print(new_properties)
@@ -129,4 +135,14 @@ class Types:
         """
         return query
     
+    def get_last_migration_number():
+        number = """
+        MATCH (a:_Migration)
+        RETURN MAX(a.id) as mig_num
+        """
+        return number
     
+    def create_migration_node(migration_num):
+        return f"""
+        CREATE (m:_Migration{{id : {migration_num}}})
+        """

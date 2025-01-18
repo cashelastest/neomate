@@ -104,14 +104,20 @@ class MigrationManager:
 
     def init_schemas(self):
         classes = self.neo_mate.base.__subclasses__()
-        self.neo_mate.delete_all_nodes(type = '_Schema',delete_relationships = True)
-        self.neo_mate.delete_all_nodes(type = '_Property',delete_relationships = True)
-
+        # self.neo_mate.delete_all_nodes(type = '_Schema',delete_relationships = True)
+        # self.neo_mate.delete_all_nodes(type = '_Property',delete_relationships = True)
+        with self.neo_mate.trans() as tx:
+            migration_query = Types.get_last_migration_number()
+            migration_num= tx.run(migration_query)
+            # print(migration_num.single())
+            migration_num = migration_num.single()['mig_num']
+            migration = migration_num if migration_num!=0 and migration_num is not None else 0
+            tx.run(Types.create_migration_node(migration+1))
         for cls in classes:
             
             print(1)
             nodename = vars(cls).get("__nodename__", cls.__name__)
-            
+
             # type = getattr((cls), "type")
             a = {k:v.__dict__ for k,v in vars(cls).items() if "__" not in k}
             print(a)
@@ -120,21 +126,48 @@ class MigrationManager:
             with self.neo_mate.trans() as tx:
                 tx.run(f"""
                        CREATE (p:_Schema {{ nodename: "{nodename}"}})
+                       WITH p
+                       MATCH (migration:_Migration)
+                       WHERE migration.id = {migration+1}
+                       CREATE (migration) - [:HAS_SCHEMA] ->(p)
                        """)
+                
             for prop in properties:
                 print(f"""
                            CREATE (p:_Property{{{prop}}})
                            """)
                 with self.neo_mate.trans() as tx:
- 
+                    print(f"""
+                    CREATE (p:_Property{{{prop}}})
+                    WITH p
+                    MATCH (s:_Schema) <- [:HAS_SCHEMA] - (migration: _Migration)
+                    WHERE s.nodename = "{nodename}" AND migration.is = {migration_num+1}
+                    CREATE (s)-[:HAS_PROPERTY]->(p)
+                    """)
                     tx.run(f"""
                     CREATE (p:_Property{{{prop}}})
                     WITH p
-                    MATCH (s:_Schema)
-                    WHERE s.nodename = "{nodename}"
+                    MATCH (s:_Schema) <- [:HAS_SCHEMA] - (migration: _Migration)
+                    WHERE s.nodename = "{nodename}" AND migration.id = {migration_num+1}
                     CREATE (s)-[:HAS_PROPERTY]->(p)
                     """)
         
+
+        
+        # self.query_runner()                  
+        # with self.neo_mate.trans() as tx:
+            
+            # print(migration_num.single()["mig_num"])
+
+        #     query = f"""
+        # MATCH (a:_Migration),(b:_Schema) 
+        # WHERE a.id={migration+1} AND b.nodename="{nodename}"
+        # CREATE (a)-[r:HAS_SCHEMA]->(b)
+        # RETURN count(a) as a, count(b) as b, count(r) as r
+        #                     """
+        #     res=tx.run(query)
+            # print(query)
+            # print(res.single())
             # cypher_query = f"""CREATE (a:_Schema{{{properties}}})"""
             # cypher_query = f"""CREATE (a:_Schema{cls})"""
             # with self.neo_mate.trans() as tx:
@@ -159,21 +192,26 @@ class MigrationManager:
     def makemigrations(self):
 
         validated_schema = self.validate_schema()
-        query =''
-        for node in validated_schema['creates']:
-            query = Types.create_node_attr(*node)
-            self.query_runner(query)
+        if validated_schema['creates'] == [] and validated_schema['changes'] and validated_schema['deletes']:
+            print("Nothing to update")
+            print(validated_schema)
+            return 
+        self.init_schemas()
+        # query =''
+        # for node in validated_schema['creates']:
+        #     query = Types.create_node_attr(*node)
+        #     self.query_runner(query)
 
-            print("creating property \n", query)
-        for node in validated_schema['deletes']:
-            query = Types.delete_node_attr(*node)
-            self.query_runner(query)
-            print("deletes nodes \n", query)
-        for node in validated_schema['changes']:
-            for key,value in node[2].items():
+        #     print("creating property \n", query)
+        # for node in validated_schema['deletes']:
+        #     query = Types.delete_node_attr(*node)
+        #     self.query_runner(query)
+        #     print("deletes nodes \n", query)
+        # for node in validated_schema['changes']:
+        #     for key,value in node[2].items():
                 
-                query = Types.add_prop_to_node_attr(node[0],node[1], (key,value))
-                self.query_runner(query)
+        #         query = Types.add_prop_to_node_attr(node[0],node[1], (key,value))
+        #         self.query_runner(query)
 
             
-            print("creating attrs to ", query)
+            # print("creating attrs to ", query)
