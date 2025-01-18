@@ -34,7 +34,7 @@ class NeoBase:
             tx.run(query)
 
         
-    def create_relationships(self, type1: str,type2:str, property1: str, value1, value2, relationship_name: str):
+    def create_relationships(self, type1: str,type2:str, property1: str, value1, value2, relationship_name: str, property2 = None):
         """Creates relationship between two nodes of the same type.
 
     Args:
@@ -53,11 +53,16 @@ class NeoBase:
         # Creates (John)-[:KNOWS]->(Jane) relationship
     """
         def format_value(value):
-            return f'"{value}"' if isinstance(value, str) else str(value)
+            try:
+                value = int(value)
+                return value
+            except:
+                return f'"{value}"'
+            # return f'"{value}"' if isinstance(value, str) else str(value)
         
         query = f"""
             MATCH (a:{type1}),(b:{type2}) 
-            WHERE a.{property1}={format_value(value1)} AND b.{property1}={format_value(value2)}
+            WHERE a.{property1}={format_value(value1)} AND b.{property2 or property1}={format_value(value2)}
             CREATE (a)-[r:{relationship_name}]->(b)
             RETURN count(a) as a, count(b) as b, count(r) as r
         """
@@ -65,10 +70,13 @@ class NeoBase:
         with self.trans() as tx:
             response = tx.run(query)
             result = response.single()['r']
+            print(result)
             if result != 0:
-                self.logger.info(f"Successfully created relationship between {type1} {property1} {value1} and {type1} {property1}={value2}")
+                self.logger.info(f"Successfully created relationship between {type1} {property1} {value1} and {type1} {property2}={value2}")
             else:
-                self.logger.error(f"ERROR! Did not find elements with this check: {type1} {property1} {value1} and {type1} {property1}={value2}")
+                self.logger.error(f"ERROR! Did not find elements with this check: {type1} {property1} {value1} and {type1} {property2}={value2}")
+                self.logger.error(query)
+
                 raise
                 
                 
@@ -147,6 +155,8 @@ class NeoBase:
         """
         
         query = f"""MATCH (a{f": {type}" if type else ""}) {'DETACH DELETE' if delete_relationships else 'DELETE'} a"""
+        
+        print(query)
         with self.trans() as tx:
             tx.run(query)
 
