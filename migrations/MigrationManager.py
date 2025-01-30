@@ -17,23 +17,23 @@ class BaseMigration:
 class MigrationManager:
     def __init__(self, neo_mate):
         self.neo_mate = neo_mate
-    def init_history(self):
-        with self.neo_mate.trans() as tx:
-            tx.run("""
-                   MERGE (h:_MigrationHistory)
-                   ON CREATE SET h.applied_migrations = []
-                   """)
-    def get_applied_migrations(self):
+    # def init_history(self):
+    #     with self.neo_mate.trans() as tx:
+    #         tx.run("""
+    #                MERGE (h:_MigrationHistory)
+    #                ON CREATE SET h.applied_migrations = []
+    #                """)
+    # def get_applied_migrations(self):
         
-        with self.neo_mate.trans() as tx:
-            result = tx.run("""
-                   MATCH(h:_MigrationHistory)
-                   RETURN h.applied_migrations as migrations
-                   """)
-            result = result.single()
-            result = result.get('migrations', [])
+    #     with self.neo_mate.trans() as tx:
+    #         result = tx.run("""
+    #                MATCH(h:_MigrationHistory)
+    #                RETURN h.applied_migrations as migrations
+    #                """)
+    #         result = result.single()
+    #         result = result.get('migrations', [])
 
-            return result
+    #         return result
     def validate_schema(self):
         schemas = self.neo_mate.base.__subclasses__()
         validated_results = []
@@ -112,15 +112,15 @@ class MigrationManager:
             # print(migration_num.single())
             migration_num = migration_num.single()['mig_num']
             migration = migration_num if migration_num!=0 and migration_num is not None else 0
+
             tx.run(Types.create_migration_node(migration+1))
         for cls in classes:
-            
-            print(1)
+
             nodename = vars(cls).get("__nodename__", cls.__name__)
 
             # type = getattr((cls), "type")
             a = {k:v.__dict__ for k,v in vars(cls).items() if "__" not in k}
-            print(a)
+            
             properties =[ f"""{v.to_dict(k)} """ for k, v in vars(cls).items() if '__' not in k]
             # properties.append(f"""__nodename__: '{nodename}' """)
             with self.neo_mate.trans() as tx:
@@ -141,14 +141,14 @@ class MigrationManager:
                     CREATE (p:_Property{{{prop}}})
                     WITH p
                     MATCH (s:_Schema) <- [:HAS_SCHEMA] - (migration: _Migration)
-                    WHERE s.nodename = "{nodename}" AND migration.is = {migration_num+1}
+                    WHERE s.nodename = "{nodename}" AND migration.id = {migration+1}
                     CREATE (s)-[:HAS_PROPERTY]->(p)
                     """)
                     tx.run(f"""
                     CREATE (p:_Property{{{prop}}})
                     WITH p
                     MATCH (s:_Schema) <- [:HAS_SCHEMA] - (migration: _Migration)
-                    WHERE s.nodename = "{nodename}" AND migration.id = {migration_num+1}
+                    WHERE s.nodename = "{nodename}" AND migration.id = {migration+1}
                     CREATE (s)-[:HAS_PROPERTY]->(p)
                     """)
         
@@ -215,3 +215,13 @@ class MigrationManager:
 
             
             # print("creating attrs to ", query)
+    def drop(self):
+        with self.neo_mate.trans() as tx:
+            query = """
+            OPTIONAL MATCH (a:_Migration)
+            OPTIONAL MATCH (b:_Schema)
+            OPTIONAL MATCH (c:_Property)
+            WITH a, b, c
+            DETACH DELETE a, b, c;
+            """
+            tx.run(query)

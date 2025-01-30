@@ -1,6 +1,6 @@
 from neomate.neomate.base import NeoBase
 from neomate.neomate.orm import Types
-
+from neomate.neomate.schema_validator import SchemaValidator
 class Base:
     id  = 0
     
@@ -124,7 +124,11 @@ class NeoMate(NeoBase):
         if len(vars(cls)) !=0:
             kwargs = vars(cls)
         try:
+            valid = SchemaValidator(neomate=self).validate_data(data)
+            if not valid:
+                self.logger.exception("Schemas don`t equal")
             res = self.validate(data, kwargs)
+            print("REEES", res)
         except Exception:
 
             self.logger.exception("Validation failed")
