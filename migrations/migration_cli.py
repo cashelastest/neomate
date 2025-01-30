@@ -80,10 +80,22 @@ def migrate():
             print(file)
             
             manager.record_migrations(migration.version)
+            
+            
+@cli.command("init")
+def init_schema():
+    manager = SessionManager.get_instance().manager
+    manager.init_schemas()
 @cli.command("test")
 def testing():
     neo_mate = SessionManager.get_neo_mate()
     manager = SessionManager.get_instance().manager
-    manager.init_schemas()
+    # manager.init_schemas()
     # manager.get_schema()
-    # manager.makemigrations()
+    manager.makemigrations()
+    
+@cli.command("drop")
+def drop_all_migrations():
+    neo_mate = SessionManager.get_neo_mate()
+    manager = SessionManager.get_instance().manager
+    manager.drop()
