@@ -5,12 +5,13 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 from dataclasses import dataclass
-from neo4j import GraphDatabase
+from neo4j import GraphDatabase, AsyncGraphDatabase
 from dotenv import load_dotenv
 from neomate.neomate import Neomate
 from neomate.BaseNode import BaseNode
 load_dotenv()
-driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", os.getenv("PASSWORD")))
+
+driver = AsyncGraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", os.getenv("PASSWORD")))
 session = driver.session()
 
 
@@ -22,8 +23,13 @@ class Person(BaseNode):
     hobbies : List[str]
     __nodename__ : str = "Person"
 
-person = Person(name = "John2", age = 36, gender=True, hobbies=["swimming", "basketball"])
-
 neo = Neomate(driver=driver)
-neo.add(person)
-neo.commit()
+BaseNode.create_models()
+async def main():
+    builder = await neo.get(Person).where(Person.name == "John1").limit(20).run()
+    print(builder)
+import asyncio
+asyncio.run(main())
+
+# builder = neo.get(Person).where(Person.name == "John1").limit(20).run()
+# print(builder)

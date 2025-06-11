@@ -25,6 +25,7 @@ class InvalidPersonAnnotation(BaseNode):
     age : int
     gender : bool
     hobbies : List[int]
+    __nodename__ : str = "Person"
 
 class TestNeomateCreate:
     @pytest.fixture

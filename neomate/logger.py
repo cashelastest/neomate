@@ -20,9 +20,12 @@ class ColoredFormatter(logging.Formatter):
 def get_logger():
     init(autoreset=True)
     logger = logging.getLogger(__name__)
-    handler = logging.StreamHandler()
-    formatter = ColoredFormatter('%(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
+
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = ColoredFormatter('%(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+    
     return logger
